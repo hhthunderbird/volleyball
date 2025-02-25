@@ -20,7 +20,7 @@ public class CourtBehaviour : NetworkBehaviour
             _scoreBoard.OnBallFallRpc( _courtSide );
             
             if( _scoreBoard.DoReset)
-                SessionManager.Instance.HideBallRpc();
+                SessionManager.Instance.ResetBallPositionRpc();
         }
     }
 }

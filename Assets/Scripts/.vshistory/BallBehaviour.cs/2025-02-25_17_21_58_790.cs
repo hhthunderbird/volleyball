@@ -54,6 +54,9 @@ public class BallBehaviour : NetworkBehaviour
             BallVelocity.Value = _ballRB.linearVelocity;
             BallPosition.Value = transform.position;
 
+            if ( transform.position.y < 0 )
+                SessionManager.Instance.ResetBallPositionRpc();
+
             if ( _courtDivisor != null )
             {
                 if ( transform.position.x > _courtDivisor.position.x ) // to its right
@@ -67,9 +70,6 @@ public class BallBehaviour : NetworkBehaviour
                     KickDirection.Value = Vector3.up + Vector3.right;
                 }
             }
-
-            if ( transform.position.y < 0 )
-                SessionManager.Instance.ResetBallPositionRpc();
         }
 
         if ( IsClient && !IsOwner )

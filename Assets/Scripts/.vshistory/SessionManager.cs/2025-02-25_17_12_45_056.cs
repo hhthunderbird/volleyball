@@ -16,7 +16,6 @@ public class SessionManager : NetworkBehaviour
     [SerializeField] private Transform _leftSideSpawnPoint;
     [SerializeField] private Transform _rightSideSpawnPoint;
     [SerializeField] private Transform _courtDivisor;
-    [SerializeField] private Transform _ballSpawnReference;
 
     private GameObject _ball;
 
@@ -148,8 +147,8 @@ public class SessionManager : NetworkBehaviour
 
     private Vector3 RandomBallPosition()
     {
-        var randomPlace = Random.insideUnitCircle * 150;
-        return _ballSpawnReference.position + new Vector3( randomPlace.x, _ballHeight, randomPlace.y );
+        var randomPlace = Random.insideUnitCircle * 30;
+        return ( ( _leftSideSpawnPoint.position + _rightSideSpawnPoint.position ) / 2 ) + new Vector3( randomPlace.x, _ballHeight, randomPlace.y );
     }
 
     [Rpc(SendTo.Server)]

@@ -148,7 +148,7 @@ public class SessionManager : NetworkBehaviour
 
     private Vector3 RandomBallPosition()
     {
-        var randomPlace = Random.insideUnitCircle * 150;
+        var randomPlace = Random.insideUnitCircle * 220;
         return _ballSpawnReference.position + new Vector3( randomPlace.x, _ballHeight, randomPlace.y );
     }
 

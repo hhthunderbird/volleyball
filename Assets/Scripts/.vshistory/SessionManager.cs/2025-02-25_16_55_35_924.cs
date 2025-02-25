@@ -16,7 +16,6 @@ public class SessionManager : NetworkBehaviour
     [SerializeField] private Transform _leftSideSpawnPoint;
     [SerializeField] private Transform _rightSideSpawnPoint;
     [SerializeField] private Transform _courtDivisor;
-    [SerializeField] private Transform _ballSpawnReference;
 
     private GameObject _ball;
 
@@ -60,9 +59,7 @@ public class SessionManager : NetworkBehaviour
         }
         else
         {
-            var rb = _ball.GetComponent<Rigidbody>();
-            rb.linearVelocity = Vector3.zero;
-            rb.isKinematic = false;
+            _ball.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
             _ball.transform.position = RandomBallPosition();
         }
     }
@@ -136,7 +133,7 @@ public class SessionManager : NetworkBehaviour
             _isBallSpawn = true;
 
             var aiPlayer = FindFirstObjectByType<AIPlayerController>();
-
+            
             if ( aiPlayer != null )
             {
                 var ball = _ball.GetComponent<BallBehaviour>();
@@ -148,19 +145,8 @@ public class SessionManager : NetworkBehaviour
 
     private Vector3 RandomBallPosition()
     {
-        var randomPlace = Random.insideUnitCircle * 150;
-        return _ballSpawnReference.position + new Vector3( randomPlace.x, _ballHeight, randomPlace.y );
+        var randomPlace = Random.insideUnitCircle * 30;
+        return ( ( _leftSideSpawnPoint.position + _rightSideSpawnPoint.position ) / 2 ) + new Vector3( randomPlace.x, _ballHeight, randomPlace.y );
     }
 
-    [Rpc(SendTo.Server)]
-    internal void HideBallRpc()
-    {
-        if ( _isBallSpawn )
-        {
-            var rb = _ball.GetComponent<Rigidbody>();
-            rb.linearVelocity = Vector3.zero;
-            _ball.transform.position = Vector3.up * 1000;
-            rb.isKinematic = true;
-        }
-    }
 }

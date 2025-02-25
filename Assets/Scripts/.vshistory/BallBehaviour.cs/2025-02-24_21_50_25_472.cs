@@ -67,9 +67,6 @@ public class BallBehaviour : NetworkBehaviour
                     KickDirection.Value = Vector3.up + Vector3.right;
                 }
             }
-
-            if ( transform.position.y < 0 )
-                SessionManager.Instance.ResetBallPositionRpc();
         }
 
         if ( IsClient && !IsOwner )
