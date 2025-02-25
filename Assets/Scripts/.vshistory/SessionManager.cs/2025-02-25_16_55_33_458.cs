@@ -133,7 +133,6 @@ public class SessionManager : NetworkBehaviour
             _isBallSpawn = true;
 
             var aiPlayer = FindFirstObjectByType<AIPlayerController>();
-            
             if ( aiPlayer != null )
             {
                 var ball = _ball.GetComponent<BallBehaviour>();

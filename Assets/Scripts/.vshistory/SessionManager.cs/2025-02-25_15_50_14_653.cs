@@ -1,9 +1,14 @@
 using Cysharp.Threading.Tasks;
+using NUnit.Framework;
+using System.Collections.Generic;
+using Unity.Android.Gradle;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Multiplayer;
+using UnityEditor.PackageManager;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.Events;
 
 public class SessionManager : NetworkBehaviour
@@ -107,6 +112,10 @@ public class SessionManager : NetworkBehaviour
                     playerInstance.layer = LayerMask.NameToLayer( "Player2" );
                     break;
             }
+
+            var netObj = playerInstance.GetComponent<NetworkObject>();
+
+            netObj.SpawnWithOwnership( client.ClientId );
         }
 
         if ( NetworkManager.Singleton.ConnectedClientsList.Count == 1 )
@@ -133,13 +142,9 @@ public class SessionManager : NetworkBehaviour
             _isBallSpawn = true;
 
             var aiPlayer = FindFirstObjectByType<AIPlayerController>();
-            
-            if ( aiPlayer != null )
-            {
-                var ball = _ball.GetComponent<BallBehaviour>();
-                aiPlayer.Ball = ball;
-                ball.CourtDivisor = _courtDivisor;
-            }
+            var ball = _ball.GetComponent<BallBehaviour>();
+            aiPlayer.Ball = ball;
+            ball.CourtDivisor = _courtDivisor;
         }
     }
 

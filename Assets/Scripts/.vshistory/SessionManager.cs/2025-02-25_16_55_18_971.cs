@@ -119,7 +119,7 @@ public class SessionManager : NetworkBehaviour
         }
     }
 
-    private void SpawnBall()
+    private void SpawnBall( )
     {
         if ( IsServer )
         {
@@ -133,13 +133,9 @@ public class SessionManager : NetworkBehaviour
             _isBallSpawn = true;
 
             var aiPlayer = FindFirstObjectByType<AIPlayerController>();
-            
-            if ( aiPlayer != null )
-            {
-                var ball = _ball.GetComponent<BallBehaviour>();
-                aiPlayer.Ball = ball;
-                ball.CourtDivisor = _courtDivisor;
-            }
+            var ball = _ball.GetComponent<BallBehaviour>();
+            aiPlayer.Ball = ball;
+            ball.CourtDivisor = _courtDivisor;
         }
     }
 

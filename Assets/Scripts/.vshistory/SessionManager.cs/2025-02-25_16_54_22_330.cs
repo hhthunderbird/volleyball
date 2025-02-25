@@ -119,7 +119,7 @@ public class SessionManager : NetworkBehaviour
         }
     }
 
-    private void SpawnBall()
+    private void SpawnBall( bool isAi = false )
     {
         if ( IsServer )
         {
@@ -132,10 +132,9 @@ public class SessionManager : NetworkBehaviour
             netObj.Spawn();
             _isBallSpawn = true;
 
-            var aiPlayer = FindFirstObjectByType<AIPlayerController>();
-            
-            if ( aiPlayer != null )
+            if ( isAi )
             {
+                var aiPlayer = FindFirstObjectByType<AIPlayerController>();
                 var ball = _ball.GetComponent<BallBehaviour>();
                 aiPlayer.Ball = ball;
                 ball.CourtDivisor = _courtDivisor;

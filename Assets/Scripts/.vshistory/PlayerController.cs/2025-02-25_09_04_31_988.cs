@@ -25,7 +25,6 @@ public class PlayerController : NetworkBehaviour
     void Start()
     {
         _rigidbody = GetComponent<Rigidbody>();
-        _rigidbody.isKinematic = false;
 
         if ( !IsOwner )
             enabled = false;
