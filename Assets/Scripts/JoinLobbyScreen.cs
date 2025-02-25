@@ -1,14 +1,13 @@
 using Cysharp.Threading.Tasks;
+using System;
 using System.Collections.Generic;
 using System.Threading;
-using System;
 using Unity.Services.Lobbies;
+using Unity.Services.Lobbies.Models;
 using Unity.Services.Multiplayer;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
-using Unity.Services.Lobbies.Models;
-using Unity.Netcode;
 
 public class JoinLobbyScreen : MonoBehaviour
 {
@@ -16,6 +15,10 @@ public class JoinLobbyScreen : MonoBehaviour
     [SerializeField] private InputField _lobbyNameInput;
     [SerializeField] private Button _searchButton;
     [SerializeField] private Button _confirmButton;
+
+    [SerializeField] private Text _playerName;
+    [SerializeField] private InputField _playerNameInput;
+
     public UnityEvent OnLobbyJoined;
 
     private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
@@ -35,7 +38,12 @@ public class JoinLobbyScreen : MonoBehaviour
 
     private void Start()
     {
+        OnPlayerNameInput( NameUtils.RandomName );
+    }
 
+    private void OnPlayerNameInput( string value )
+    {
+        PlayerPrefs.SetString( PlayerPrefsKeys.PlayerName.ToString(), value );
     }
 
     private void SetLobbyName( string lobby )
@@ -57,16 +65,14 @@ public class JoinLobbyScreen : MonoBehaviour
 
     private async void OnConfirm()
     {
+        PlayerPrefs.SetString( PlayerPrefsKeys.PlayerName.ToString(), _playerName.text );
+        PlayerPrefs.Save();
+
         try
         {
-            var options = new SessionOptions
-            {
-                Name = _lobbyName,
-            }.WithDistributedAuthorityNetwork();
-
             Debug.Log( $"trying to join lobby name: {_lobbyName}" );
 
-            await MultiplayerService.Instance.JoinSessionByIdAsync( _lobbyName );
+            await MultiplayerService.Instance.JoinSessionByIdAsync( _lobbyName);
 
             Debug.Log( $"joined lobby name: {_lobbyName}" );
             OnLobbyJoined?.Invoke();
@@ -94,7 +100,7 @@ public class JoinLobbyScreen : MonoBehaviour
             var lobby = await LobbyService.Instance.GetLobbyAsync( sessionName );
 
             Debug.Log( $"Lobby Name: {lobby.Name}, Available slots: {lobby.AvailableSlots} id {lobby.Id}" );
-            
+
             cancellationTokenSource.ThrowIfCancellationRequested();
 
             _confirmButton.interactable = lobby.AvailableSlots >= 1;

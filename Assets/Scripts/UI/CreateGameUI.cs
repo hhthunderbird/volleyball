@@ -2,8 +2,6 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
-
-
 public class CreateGameUI : MonoBehaviour
 {
     [SerializeField] private InputField _lobbyName;
@@ -52,7 +50,6 @@ public class CreateGameUI : MonoBehaviour
     {
         _confirmButton.interactable = false;
         PlayerPrefs.SetString( PlayerPrefsKeys.RoomName.ToString(), _roomName );
-        PlayerPrefs.SetInt( PlayerPrefsKeys.RoomPlayersQuantity.ToString(), _playerLimit );
         PlayerPrefs.Save();
     }
 

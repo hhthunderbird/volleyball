@@ -71,12 +71,10 @@ public class SessionManager : NetworkBehaviour
 
     public UniTask StartSession( string sessionId )
     {
-        var playersLimit = PlayerPrefs.GetInt( PlayerPrefsKeys.RoomPlayersQuantity.ToString() );
-
         var options = new SessionOptions
         {
             Name = sessionId,
-            MaxPlayers = playersLimit,
+            MaxPlayers = 4,
             IsPrivate = false
         }.WithRelayNetwork();
 
@@ -87,10 +85,9 @@ public class SessionManager : NetworkBehaviour
     public void StartGameRpc()
     {
         OnGameStart?.Invoke();
+        
         if ( IsServer )
-        {
             SpawnPlayers();
-        }
     }
 
     private void SpawnPlayers()
