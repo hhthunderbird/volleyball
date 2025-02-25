@@ -1,0 +1,93 @@
+using Unity.Netcode;
+using UnityEngine;
+using UnityEngine.EventSystems;
+
+public class PlayerController : NetworkBehaviour
+{
+    private Rigidbody _rigidbody;
+
+    [SerializeField] private float _speed = 5f;
+    [SerializeField] private float _jumpStrength = 5f;
+
+    private bool _isJumping;
+    public bool IsJumping => _isJumping;
+
+    private Vector3 _moveDirection;
+
+    private float _tapThreshold = 0.3f;
+    private float _inputCounter;
+    private Vector3 _referencePosition;
+    private bool _inputDown;
+
+    private MoveCommand _moveCommand = new();
+    private JumpCommand _jumpCommand = new();
+
+    void Start()
+    {
+        _rigidbody = GetComponent<Rigidbody>();
+
+        if ( !IsOwner )
+            enabled = false;
+    }
+
+    void Update()
+    {
+        if ( !IsOwner ) return;
+
+        if ( EventSystem.current.IsPointerOverGameObject() ) return;
+
+
+        _isJumping = Mathf.Abs( _rigidbody.linearVelocity.y ) > 0.01f;
+
+        if ( Input.GetMouseButtonDown( 0 ) && !pointerOverUI && !_isJumping )
+        {
+            _inputDown = true;
+            _referencePosition = Input.mousePosition;
+        }
+        if ( Input.GetMouseButtonUp( 0 ) )
+        {
+            _inputDown = false;
+
+            if ( _inputCounter <= _tapThreshold && !pointerOverUI && !_isJumping )
+                RequestJumpRpc();
+        }
+
+        if ( _inputDown )
+        {
+            _inputCounter += Time.deltaTime;
+            var direction = Input.mousePosition - _referencePosition;
+            _moveCommand.Direction = new Vector3( direction.x, 0f, direction.y ).normalized * _speed;
+        }
+        else
+        {
+            _inputCounter = 0;
+            _moveCommand.Direction = Vector3.zero;
+        }
+        _moveCommand.Execute( this );
+    }
+
+    public void Move( Vector3 dir )
+    {
+        _moveDirection = dir;
+    }
+
+    public void Jump()
+    {
+        if ( _inputCounter <= _tapThreshold && !_isJumping )
+            RequestJumpRpc();
+    }
+
+    void FixedUpdate()
+    {
+        if ( !IsOwner ) return;
+
+        _rigidbody.linearVelocity = new Vector3( _moveDirection.x, _rigidbody.linearVelocity.y, _moveDirection.z );
+    }
+
+    [Rpc( SendTo.ClientsAndHost )]
+    private void RequestJumpRpc()
+    {
+        if ( Mathf.Abs( _rigidbody.linearVelocity.y ) < 0.1f )
+            _rigidbody.AddForce( Vector3.up * _jumpStrength, ForceMode.Impulse );
+    }
+}

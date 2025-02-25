@@ -1,0 +1,177 @@
+using Unity.Android.Gradle.Manifest;
+using Unity.Netcode;
+using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
+
+public enum PlayerSide
+{
+    Left, Right
+}
+
+public class BallBehaviour : NetworkBehaviour
+{
+    [SerializeField] private float _kickStrength;
+    private Rigidbody _ballRB;
+    private NetworkObject _ballObj;
+    public NetworkVariable<Vector3> BallPosition =
+        new(
+            Vector3.zero,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server
+            );
+
+    public NetworkVariable<Vector3> BallVelocity =
+        new(
+            Vector3.zero,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server
+            );
+    public NetworkVariable<Vector3> BallTarget =
+        new(
+            Vector3.zero,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server
+            );
+
+    [SerializeField] private Transform _courtDivisor;
+    public Transform CourtDivisor
+    {
+        set => _courtDivisor = value;
+    }
+
+    private NetworkVariable<Vector3> KickDirection = new();
+
+    private void Start()
+    {
+        _ballRB = GetComponent<Rigidbody>();
+        _ballObj = GetComponent<NetworkObject>();
+    }
+
+    private void Update()
+    {
+        if ( IsServer )
+        {
+            BallVelocity.Value = _ballRB.linearVelocity;
+            BallPosition.Value = transform.position;
+
+            if ( _courtDivisor != null )
+            {
+                if ( transform.position.x > _courtDivisor.position.x ) // to its right
+                {
+                    Debug.Log( "SEND TO LEFT" );
+                    KickDirection.Value = Vector3.up + Vector3.left;
+                }
+                else if ( transform.position.x < _courtDivisor.position.x ) // to its left
+                {
+                    Debug.Log( "SEND TO RIGHT" );
+                    KickDirection.Value = Vector3.up + Vector3.right;
+                }
+            }
+        }
+
+        if ( IsClient && !IsOwner )
+        {
+            _ballRB.linearVelocity = BallVelocity.Value;
+
+            transform.position = Vector3.Lerp( transform.position, _ballRB.position, Time.deltaTime * 10f );
+        }
+    }
+
+    private void OnCollisionEnter( Collision collision )
+    {
+        if ( !IsServer ) return;
+
+        float forceMultiplier = 0;
+
+        if ( collision.gameObject.layer == LayerMask.NameToLayer( "Player1" ) )
+        {
+            var playerObj = collision.gameObject.GetComponent<NetworkObject>();
+            _ballObj.ChangeOwnership( playerObj.OwnerClientId );
+
+            var player = collision.gameObject.GetComponent<PlayerController>();
+
+            if ( player == null )
+            {
+                forceMultiplier = _kickStrength;
+            }
+            else
+            {
+                forceMultiplier = player.IsJumping ? _kickStrength * 2 : _kickStrength;
+            }
+            ApplyForceServerRpc( KickDirection.Value, forceMultiplier );
+
+        }
+        if ( collision.gameObject.layer == LayerMask.NameToLayer( "Player2" ) )
+        {
+            var playerObj = collision.gameObject.GetComponent<NetworkObject>();
+            _ballObj.ChangeOwnership( playerObj.OwnerClientId );
+
+            var player = collision.gameObject.GetComponent<PlayerController>();
+
+            if ( player == null )
+            {
+                forceMultiplier = _kickStrength;
+            }
+            else
+            {
+                forceMultiplier = player.IsJumping ? _kickStrength * 2 : _kickStrength;
+            }
+            ApplyForceServerRpc( KickDirection.Value, forceMultiplier );
+        }
+    }
+
+    [Rpc( SendTo.ClientsAndHost )]
+    private void ApplyForceServerRpc( Vector3 direction, float multiplier )
+    {
+        if ( !IsServer ) return;
+
+        _ballRB.AddForce( _kickStrength * multiplier * direction, ForceMode.Impulse );
+
+        direction = direction.normalized;
+
+        var angle = 0f;
+
+        if ( direction.x > 0 ) //right
+            angle = Vector3.Angle( Vector3.right, direction ) * Mathf.Deg2Rad;
+        else if ( direction.x < 0 ) // left
+            angle = Vector3.Angle( Vector3.left, direction ) * Mathf.Deg2Rad;
+
+        _ballRB.linearVelocity = direction * multiplier * _kickStrength;
+
+        BallVelocity.Value = _ballRB.linearVelocity;
+
+        BallTarget.Value = Target( multiplier * _kickStrength, angle, transform.position.y );
+    }
+
+    private Vector3 Target( float velocity, float angle, float initialHeight, Vector3 launchDirection )
+    {
+        // Get the magnitude of gravity
+        float g = Mathf.Abs( Physics.gravity.y );
+
+        // Calculate the horizontal distance (range) including initial height
+        float vx = velocity * Mathf.Cos( angle ); // Horizontal velocity in x-z plane
+        float vy = velocity * Mathf.Sin( angle ); // Vertical velocity
+
+        // Formula for range with initial height
+        float x = ( vx / g ) * ( vy + Mathf.Sqrt( Mathf.Pow( vy, 2 ) + 2 * g * initialHeight ) );
+
+        // Calculate the z component based on the launch direction
+        float z = x * ( launchDirection.z / launchDirection.x ); // Proportional to the x component
+
+        // Calculate the target position at ground height (y = 0)
+        Vector3 groundTarget = transform.position + new Vector3( x, 0, z );
+        groundTarget.y = 0; // Set the y-coordinate to 0
+
+        return groundTarget;
+    }
+
+
+    private void OnDrawGizmos()
+    {
+        if ( IsServer )
+        {
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawSphere( BallTarget.Value, 10 );
+        }
+    }
+}
